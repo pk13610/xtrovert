@@ -1,0 +1,202 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{632BF787-F19C-431A-924F-955C9801F5F0}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>xt_proj</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin_d\</OutDir>
+    <IntDir>$(SolutionDir)Intermediate\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <IntDir>$(SolutionDir)Intermediate\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)../xt_api;$(SolutionDir)../util/inc;$(SolutionDir)../../lib_win/gperftools/inc;$(SolutionDir)../../lib_win/libevent/include;$(SolutionDir)../;$(SolutionDir)../inc;$(ProjectDir)inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)../../lib_win/gperftools/Debug;$(SolutionDir)../../lib_win/libevent;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtcmalloc_minimal-debug.lib;libevent.lib;libevent_core.lib;libevent_extras.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ForceSymbolReferences>__tcmalloc</ForceSymbolReferences>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)../xt_api;$(SolutionDir)../util/inc;$(SolutionDir)../../lib_win/gperftools/inc;$(SolutionDir)../../lib_win/libevent/include;$(SolutionDir)../;$(SolutionDir)../inc;$(ProjectDir)inc</AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)../../lib_win/gperftools/Release;$(SolutionDir)../../lib_win/libevent</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtcmalloc_minimal.lib;libevent.lib;libevent_core.lib;libevent_extras.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ForceSymbolReferences>__tcmalloc</ForceSymbolReferences>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\app\inc\XtApp.h" />
+    <ClInclude Include="..\..\app\inc\XtAppMessage.h" />
+    <ClInclude Include="..\..\app\inc\XtAppMsgMap.h" />
+    <ClInclude Include="..\..\app\inc\XtArchive.h" />
+    <ClInclude Include="..\..\app\inc\XtCmdLineInfo.h" />
+    <ClInclude Include="..\..\app\inc\XtCmdTarget.h" />
+    <ClInclude Include="..\..\app\inc\XtDocument.h" />
+    <ClInclude Include="..\..\app\inc\XtThread.h" />
+    <ClInclude Include="..\..\app\xafx\xafx.h" />
+    <ClInclude Include="..\..\app\xafx\xafx_app.h" />
+    <ClInclude Include="..\..\app\xafx\xafx_app_module.h" />
+    <ClInclude Include="..\..\app\xafx\xafx_define.h" />
+    <ClInclude Include="..\..\app\xafx\xafx_msg.h" />
+    <ClInclude Include="..\..\inc\xtrovert.h" />
+    <ClInclude Include="..\..\net\inc\xt_net_evtbuf.h" />
+    <ClInclude Include="..\..\net\inc\xt_net_msgbuf.h" />
+    <ClInclude Include="..\..\net\reactor\XtEventHandler.h" />
+    <ClInclude Include="..\..\net\reactor\XtEvtHndlrSig.h" />
+    <ClInclude Include="..\..\net\reactor\XtNetEvtHandler.h" />
+    <ClInclude Include="..\..\net\reactor\XtReactor.h" />
+    <ClInclude Include="..\..\net\reactor\xt_reactor_define.h" />
+    <ClInclude Include="..\..\util\inc\XtMemAlloc.h" />
+    <ClInclude Include="..\..\util\inc\XtObjPool.h" />
+    <ClInclude Include="..\..\util\inc\XtRuntimeClass.h" />
+    <ClInclude Include="..\..\util\inc\xt_alg_define.h" />
+    <ClInclude Include="..\..\util\inc\xt_alg_heap.h" />
+    <ClInclude Include="..\..\util\inc\xt_alg_sort_insert.h" />
+    <ClInclude Include="..\..\util\inc\xt_alg_sort_selsort.h" />
+    <ClInclude Include="..\..\util\inc\xt_cmd_line.h" />
+    <ClInclude Include="..\..\util\inc\xt_alg_sort_qsort.h" />
+    <ClInclude Include="..\..\util\inc\xt_mem_chunk.h" />
+    <ClInclude Include="..\..\util\inc\xt_mutex.h" />
+    <ClInclude Include="..\..\util\inc\xt_obj_que.h" />
+    <ClInclude Include="..\..\util\inc\xt_ticker.h" />
+    <ClInclude Include="..\..\util\inc\xt_timer.h" />
+    <ClInclude Include="..\..\xt_api\platform.h" />
+    <ClInclude Include="..\..\xt_api\xtypes.h" />
+    <ClInclude Include="..\..\xt_api\xtchar.h" />
+    <ClInclude Include="..\..\xt_api\xt_define.h" />
+    <ClInclude Include="..\..\xt_api\xt_error.h" />
+    <ClInclude Include="..\..\xt_api\xt_file_api.h" />
+    <ClInclude Include="..\..\xt_api\xt_file_define.h" />
+    <ClInclude Include="..\..\xt_api\xt_ftw_win.h" />
+    <ClInclude Include="..\..\xt_api\xt_io_api.h" />
+    <ClInclude Include="..\..\xt_api\xt_mem_api.h" />
+    <ClInclude Include="..\..\xt_api\xt_net_api.h" />
+    <ClInclude Include="..\..\xt_api\xt_net_define.h" />
+    <ClInclude Include="..\..\xt_api\xt_sig_api.h" />
+    <ClInclude Include="..\..\xt_api\xt_str_api.h" />
+    <ClInclude Include="..\..\xt_api\xt_thread_api.h" />
+    <ClInclude Include="..\..\xt_api\xt_thread_define.h" />
+    <ClInclude Include="..\..\xt_api\xt_time_api.h" />
+    <ClInclude Include="inc\_test_app.h" />
+    <ClInclude Include="inc\_test_net.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\app\src\XtApp.cpp" />
+    <ClCompile Include="..\..\app\src\XtCmdLineInfo.cpp" />
+    <ClCompile Include="..\..\app\src\XtCmdTarget.cpp" />
+    <ClCompile Include="..\..\app\src\XtThread.cpp" />
+    <ClCompile Include="..\..\app\xafx\xafx.cpp" />
+    <ClCompile Include="..\..\app\xafx\xafx_app.cpp" />
+    <ClCompile Include="..\..\app\xafx\xafx_app_module.cpp" />
+    <ClCompile Include="..\..\app\xafx\xafx_msg.cpp" />
+    <ClCompile Include="..\..\net\reactor\XtEventHandler.cpp" />
+    <ClCompile Include="..\..\net\reactor\XtEvtHndlrSig.cpp" />
+    <ClCompile Include="..\..\net\reactor\XtNetEvtHandler.cpp" />
+    <ClCompile Include="..\..\net\reactor\XtReactor.cpp" />
+    <ClCompile Include="..\..\net\reactor\xt_reactor_define.c" />
+    <ClCompile Include="..\..\net\src\xt_net_msgbuf.c" />
+    <ClCompile Include="..\..\src\xtrovert.c" />
+    <ClCompile Include="..\..\util\src\XtMemAlloc.cpp" />
+    <ClCompile Include="..\..\util\src\XtObjPool.cpp" />
+    <ClCompile Include="..\..\util\src\XtRuntimeClass.cpp" />
+    <ClCompile Include="..\..\util\src\xt_alg_define.c" />
+    <ClCompile Include="..\..\util\src\xt_alg_heap.c" />
+    <ClCompile Include="..\..\util\src\xt_alg_sort_insert.c" />
+    <ClCompile Include="..\..\util\src\xt_alg_sort_selsort.c" />
+    <ClCompile Include="..\..\util\src\xt_cmd_line.c" />
+    <ClCompile Include="..\..\util\src\xt_alg_sort_qsort.c" />
+    <ClCompile Include="..\..\util\src\xt_mem_chunk.c" />
+    <ClCompile Include="..\..\util\src\xt_obj_que.c" />
+    <ClCompile Include="..\..\xt_api\internal\xt_thread_api_win.c" />
+    <ClCompile Include="..\..\xt_api\xt_define.c" />
+    <ClCompile Include="..\..\xt_api\xt_file_api.c" />
+    <ClCompile Include="..\..\xt_api\xt_io_api.c" />
+    <ClCompile Include="..\..\xt_api\xt_mem_api.c" />
+    <ClCompile Include="..\..\xt_api\xt_net_api.c" />
+    <ClCompile Include="..\..\xt_api\xt_sig_api.c" />
+    <ClCompile Include="..\..\xt_api\xt_str_api.c" />
+    <ClCompile Include="..\..\xt_api\xt_thread_api.c" />
+    <ClCompile Include="..\..\xt_api\xt_time_api.c" />
+    <ClCompile Include="..\..\xt_api\_xt_api_main.c" />
+    <ClCompile Include="src\_test_app.cpp" />
+    <ClCompile Include="src\_test_net.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="xt_proj.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

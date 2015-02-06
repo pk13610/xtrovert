@@ -1,0 +1,418 @@
+#include <event2/thread.h>
+SOCKADDR_IN		saddr_svr;
+SOCKLEN_T		saddrlen_svr = sizeof(SOCKADDR_IN);
+
+xt_event_fd_t sock[100] = {0};
+UINT	sock_count = 0;
+static void	OnHandleEvents1_( xt_event_fd_t nEventfd, xt_event_t nEvents, void *pArg )
+{
+	char buf[1024] = {0};
+	int buf_len = 1024;
+	int bytes = 0;
+	SOCKADDR_IN		saddr_c;
+	SOCKLEN_T		saddrlen_c = sizeof(saddr_c);
+	TCHAR ip_peer[32] = {0};
+	int ip_len = 32;
+
+	bytes = xt_recv( nEventfd, buf, buf_len, 0 );
+	buf[bytes] = 0;
+	xt_getpeername( nEventfd, (SOCKADDR*)&saddr_c, &saddrlen_c );
+
+	extract_sock_addr_struct( (SOCKADDR*)&saddr_c, saddrlen_c, ip_peer, &ip_len );
+	_tprintf( _T("Receive:[ip:%s][buf:%s]\n"), ip_peer, buf );
+
+	xt_send( nEventfd, buf, bytes, 0 );
+}
+
+static void	Accept_( xt_event_fd_t nEventfd, xt_event_t nEvents, void *pArg )
+{
+	int ret = FUN_RET_OK;
+
+	xt_event_fd_t c_skt = INVALID_SOCKET;
+	SOCKADDR_IN		saddr_c;
+	SOCKLEN_T		saddrlen_c = sizeof(saddr_c);
+
+	// 	SOCKADDR_IN		saddr_l;
+	// 	SOCKLEN_T		saddrlen_l = sizeof(saddr_l);
+	int bytes = 0;
+	TCHAR ip_peer[32] = {0};
+	int ip_len = 32;
+
+	char buf[1024] = {0};
+	int buf_len = 1024;
+
+	SOCKADDR_IN		saddr_me;
+	SOCKLEN_T		saddrlen_me = sizeof(saddr_me);
+	TCHAR ip_me[32] = {0};
+	int ip_len_me = 32;
+
+	bytes = xt_recvfrom( nEventfd, buf, buf_len, 0, (SOCKADDR*)&saddr_c, &saddrlen_c );
+	if ( bytes < 0 )
+	{
+		_tprintf( _T("Listener,Recvfrom Error:[%d]\n"), bytes );
+		return;
+	}
+
+	int send_hello = 0;
+	send_hello = xt_getsockname( nEventfd, (SOCKADDR*)&saddr_me, &saddrlen_me );
+	if ( send_hello == 0 ) /* Get Sock Name */
+	{
+		extract_sock_addr_struct( (SOCKADDR*)&saddr_me, saddrlen_me, ip_me, &ip_len_me );
+		/*_tprintf( _T("Listener,Recvfrom[buf:%s]with[ip:%s]\n"), buf, ip_me );*/
+	}
+
+	buf[bytes] = 0;
+	extract_sock_addr_struct( (SOCKADDR*)&saddr_c, saddrlen_c, ip_peer, &ip_len );
+	_tprintf( _T("Accept[ip:%s][buf:%s]with[myip:%s]\n"), ip_peer, buf, ip_me );	
+
+	c_skt = xt_socket( saddr_svr.sin_family, SOCK_DGRAM, 0 );
+
+	ret = evutil_make_socket_nonblocking( c_skt );
+	/*ret = evutil_make_listen_socket_reuseable(c_skt);*/
+
+	int one = 1;
+	ret = xt_setsockopt(c_skt, SOL_SOCKET, SO_REUSEADDR, (void*)&one,
+		(ev_socklen_t)sizeof(one));
+
+	// 	if ( send_hello )
+	// 	{
+	// 		bytes = xt_bind( c_skt,  (SOCKADDR*)&saddr_me, saddrlen_me );
+	// 	}
+	// 	else
+	// 	{
+	// 		
+	// 	}
+
+	/*fill_sock_addr_struct( (SOCKADDR*)&saddr_l, &saddrlen_l, _T("127.0.0.1:9995"), AF_INET );*/
+	bytes = xt_bind( c_skt,  (SOCKADDR*)&saddr_svr, saddrlen_svr );
+	//bytes = xt_bind( c_skt,  (SOCKADDR*)&saddr_l, saddrlen_l );
+	bytes = SktGetLastError();
+
+	bytes = xt_connect( c_skt, (SOCKADDR*)&saddr_c, saddrlen_c );
+
+	sock[sock_count] = c_skt;
+	sock_count++;
+
+// 	c_event = event_new( base, c_skt, EV_READ|EV_PERSIST, OnHandleEvents1, base );
+// 	event_add( c_event, NULL );
+}
+
+void select_(void)
+{
+	fd_set fd_read, fd_write;
+	timeval tm_out;
+	xt_event_fd_t max_sock = 0;
+	UINT i=0;
+	FD_ZERO( &fd_read );
+	FD_ZERO( &fd_write );
+	tm_out.tv_sec = 3;
+	tm_out.tv_usec = 0;
+	for ( i=0; i<sock_count; ++i )
+	{
+		if ( sock[i] > max_sock )
+		{
+			max_sock = sock[i];
+		}
+		FD_SET( sock[i], &fd_read );
+		FD_SET( sock[i], &fd_write );
+	}
+	if ( max_sock == 0 )
+	{
+		return;
+	}
+	int ret = select( max_sock+1, &fd_read, &fd_write, NULL, &tm_out );
+	if ( ret == SOCKET_ERROR )
+	{
+		return;
+	}
+	for ( i=0; i<sock_count; ++i )
+	{
+		if ( FD_ISSET(sock[i], &fd_read) )
+		{
+			if ( i == 0 )
+			{
+				Accept_( sock[i], EV_READ, NULL );
+			}
+			else
+			{
+				OnHandleEvents1_( sock[i], EV_READ, NULL );
+			}
+		}
+	}
+}
+
+void udp_server_( const TCHAR *szSvrAddr )
+{
+	int ret = FUN_RET_OK;
+	xt_event_fd_t svr_skt = INVALID_SOCKET;
+
+	fill_sock_addr_struct( (SOCKADDR*)&saddr_svr, &saddrlen_svr, szSvrAddr, AF_INET );
+	svr_skt = xt_socket( saddr_svr.sin_family, SOCK_DGRAM, 0 );
+	/*ret = evutil_make_listen_socket_reuseable(svr_skt);*/
+
+	int one = 1;
+	ret = xt_setsockopt(svr_skt, SOL_SOCKET, SO_REUSEADDR, (void*)&one,
+		(ev_socklen_t)sizeof(one));
+
+	ret = evutil_make_socket_nonblocking( svr_skt );
+
+	ret = xt_bind( svr_skt, (SOCKADDR*)&saddr_svr, saddrlen_svr );
+
+	struct timeval t;
+	t.tv_sec = 3;
+	t.tv_usec = 0;
+
+	sock[0] = svr_skt;
+	sock_count++;
+
+	while(1)
+	{
+		select_();
+	}
+}
+
+static void	OnHandleEvents1( xt_event_fd_t nEventfd, xt_event_t nEvents, void *pArg )
+{
+	char buf[1024] = {0};
+	int buf_len = 1024;
+	int bytes = 0;
+	SOCKADDR_IN		saddr_c;
+	SOCKLEN_T		saddrlen_c = sizeof(saddr_c);
+	TCHAR ip_peer[32] = {0};
+	int ip_len = 32;
+
+	bytes = xt_recv( nEventfd, buf, buf_len, 0 );
+	buf[bytes] = 0;
+	xt_getpeername( nEventfd, (SOCKADDR*)&saddr_c, &saddrlen_c );
+
+	extract_sock_addr_struct( (SOCKADDR*)&saddr_c, saddrlen_c, ip_peer, &ip_len );
+	_tprintf( _T("Receive:[ip:%s][buf:%s]\n"), ip_peer, buf );
+	
+	xt_send( nEventfd, buf, bytes, 0 );
+}
+
+static void	Accept( xt_event_fd_t nEventfd, xt_event_t nEvents, void *pArg )
+{
+	int ret = FUN_RET_OK;
+	struct event_base		*base = (struct event_base*)pArg;
+	struct event	*c_event = NULL;
+	xt_event_fd_t c_skt = INVALID_SOCKET;
+	SOCKADDR_IN		saddr_c;
+	SOCKLEN_T		saddrlen_c = sizeof(saddr_c);
+
+// 	SOCKADDR_IN		saddr_l;
+// 	SOCKLEN_T		saddrlen_l = sizeof(saddr_l);
+	int bytes = 0;
+	TCHAR ip_peer[32] = {0};
+	int ip_len = 32;
+
+	char buf[1024] = {0};
+	int buf_len = 1024;
+
+	SOCKADDR_IN		saddr_me;
+	SOCKLEN_T		saddrlen_me = sizeof(saddr_me);
+	TCHAR ip_me[32] = {0};
+	int ip_len_me = 32;
+
+	bytes = xt_recvfrom( nEventfd, buf, buf_len, 0, (SOCKADDR*)&saddr_c, &saddrlen_c );
+	if ( bytes < 0 )
+	{
+		_tprintf( _T("Listener,Recvfrom Error:[%d]\n"), bytes );
+		return;
+	}
+
+	int send_hello = 0;
+	send_hello = xt_getsockname( nEventfd, (SOCKADDR*)&saddr_me, &saddrlen_me );
+	if ( send_hello == 0 ) /* Get Sock Name */
+	{
+		extract_sock_addr_struct( (SOCKADDR*)&saddr_me, saddrlen_me, ip_me, &ip_len_me );
+		_tprintf( _T("Listener,Recvfrom[buf:%s]with[ip:%s]\n"), buf, ip_me );
+	}
+
+	buf[bytes] = 0;
+	extract_sock_addr_struct( (SOCKADDR*)&saddr_c, saddrlen_c, ip_peer, &ip_len );
+	_tprintf( _T("Accept[ip:%s][buf:%s]with[myip:%s]\n"), ip_peer, buf, ip_me );	
+
+	c_skt = xt_socket( saddr_svr.sin_family, SOCK_DGRAM, 0 );
+
+	ret = evutil_make_socket_nonblocking( c_skt );
+	/*ret = evutil_make_listen_socket_reuseable(c_skt);*/
+
+	int one = 1;
+	ret = xt_setsockopt(c_skt, SOL_SOCKET, SO_REUSEADDR, (void*)&one,
+		(ev_socklen_t)sizeof(one));
+
+// 	if ( send_hello )
+// 	{
+// 		bytes = xt_bind( c_skt,  (SOCKADDR*)&saddr_me, saddrlen_me );
+// 	}
+// 	else
+// 	{
+// 		
+// 	}
+	
+	/*fill_sock_addr_struct( (SOCKADDR*)&saddr_l, &saddrlen_l, _T("127.0.0.1:9995"), AF_INET );*/
+	bytes = xt_bind( c_skt,  (SOCKADDR*)&saddr_svr, saddrlen_svr );
+	//bytes = xt_bind( c_skt,  (SOCKADDR*)&saddr_l, saddrlen_l );
+	bytes = SktGetLastError();
+	
+	bytes = xt_connect( c_skt, (SOCKADDR*)&saddr_c, saddrlen_c );
+
+	c_event = event_new( base, c_skt, EV_READ|EV_PERSIST, OnHandleEvents1, base );
+	event_add( c_event, NULL );
+}
+
+void udp_server( const TCHAR *szSvrAddr )
+{
+	int ret = FUN_RET_OK;
+	xt_event_fd_t svr_skt = INVALID_SOCKET;
+	struct event_base		*base = NULL;
+	struct event_config *base_cfg = NULL;
+	struct event	*svr_event = NULL;
+
+	if ( base_cfg == NULL )
+	{
+		base_cfg = event_config_new();
+		if ( base_cfg == NULL )
+		{
+			return;
+		}
+	}
+
+	evthread_use_windows_threads();
+	event_config_set_num_cpus_hint( base_cfg, 1 );
+	event_config_set_flag( base_cfg, EVENT_BASE_FLAG_STARTUP_IOCP );
+	base = event_base_new_with_config(base_cfg);
+
+	event_config_free(base_cfg);
+	base_cfg = NULL;
+	if ( base == NULL )
+	{
+		return;
+	}
+	
+	fill_sock_addr_struct( (SOCKADDR*)&saddr_svr, &saddrlen_svr, szSvrAddr, AF_INET );
+	svr_skt = xt_socket( saddr_svr.sin_family, SOCK_DGRAM, 0 );
+	/*ret = evutil_make_listen_socket_reuseable(svr_skt);*/
+
+	int one = 1;
+	ret = xt_setsockopt(svr_skt, SOL_SOCKET, SO_REUSEADDR, (void*)&one,
+		(ev_socklen_t)sizeof(one));
+
+	ret = evutil_make_socket_nonblocking( svr_skt );
+
+	ret = xt_bind( svr_skt, (SOCKADDR*)&saddr_svr, saddrlen_svr );
+
+	struct timeval t;
+	t.tv_sec = 3;
+	t.tv_usec = 0;
+
+	svr_event = event_new( base, svr_skt, EV_READ|EV_PERSIST, Accept, base );
+	event_add( svr_event, NULL );
+
+	event_base_dispatch( base );
+
+	event_free( svr_event );
+	event_base_free( base );
+}
+
+static void	OnHandleEvents2( xt_event_fd_t nEventfd, xt_event_t nEvents, void *pArg )
+{
+	char buf[1024] = {0};
+	int buf_len = 1024;
+	int bytes = 0;
+	int send_hello = 0;
+
+	TCHAR ip_peer[32] = {0};
+	int ip_len = 32;
+
+	TCHAR ip_local[32] = {0};
+	int ip_local_len = 32;
+
+	SOCKADDR_IN		saddr_peer;
+	SOCKLEN_T		saddrlen_peer = sizeof(saddr_peer);
+
+	SOCKADDR_IN		saddr_local;
+	SOCKLEN_T		saddrlen_local = sizeof(saddr_peer);
+
+	send_hello = xt_getsockname( nEventfd, (SOCKADDR*)&saddr_local, &saddrlen_local );
+	if ( send_hello == 0 ) /* Get Sock Name */
+	{
+		extract_sock_addr_struct( (SOCKADDR*)&saddr_local, saddrlen_local, ip_local, &ip_local_len );
+	}
+
+	if ( nEvents & EV_READ )
+	{
+		/*bytes = xt_recvfrom( nEventfd, buf, buf_len, 0, (SOCKADDR*)&saddr_peer, &saddrlen_peer );*/
+		bytes = xt_recvfrom( nEventfd, buf, buf_len, 0, NULL, 0 );
+		if ( bytes < 0 )
+		{
+			return;
+		}
+		buf[bytes] = 0;
+		extract_sock_addr_struct( (SOCKADDR*)&saddr_peer, saddrlen_peer, ip_peer, &ip_len );
+		_tprintf( _T("Recv[%s][%s]\n"), ip_peer, buf );
+	}
+
+	if ( nEvents & EV_TIMEOUT )
+	{
+		if ( send_hello )
+		{
+			bytes = xt_sendto( nEventfd, _T("hello"), 5, 0, (SOCKADDR*)&saddr_svr, saddrlen_svr );
+		}
+		else
+		{
+			bytes = xt_sendto( nEventfd, ip_local, ip_local_len, 0, (SOCKADDR*)&saddr_svr, saddrlen_svr );
+		}
+		extract_sock_addr_struct( (SOCKADDR*)&saddr_svr, saddrlen_svr, ip_peer, &ip_len );
+		_tprintf( _T("send[%s][ip_me:%s][ret:%d]\n"), ip_peer, ip_local, bytes );
+	}
+}
+
+void udp_client( const TCHAR *szSvrAddr )
+{
+	xt_event_fd_t c_skt = INVALID_SOCKET;
+	struct event_base		*base = NULL;
+	struct event_config *base_cfg = NULL;
+	struct event	*c_event = NULL;
+
+	if ( base_cfg == NULL )
+	{
+		base_cfg = event_config_new();
+		if ( base_cfg == NULL )
+		{
+			return;
+		}
+	}
+
+	evthread_use_windows_threads();
+	event_config_set_num_cpus_hint( base_cfg, 4 );
+	event_config_set_flag( base_cfg, EVENT_BASE_FLAG_STARTUP_IOCP );
+	base = event_base_new_with_config(base_cfg);
+
+	event_config_free(base_cfg);
+	base_cfg = NULL;
+	if ( base == NULL )
+	{
+		return;
+	}
+
+	fill_sock_addr_struct( (SOCKADDR*)&saddr_svr, &saddrlen_svr, szSvrAddr, AF_INET );
+	c_skt = xt_socket( saddr_svr.sin_family, SOCK_DGRAM, 0 );
+
+	evutil_make_socket_nonblocking( c_skt );
+
+	xt_connect( c_skt, (SOCKADDR*)&saddr_svr, saddrlen_svr );
+
+	struct timeval t;
+	t.tv_sec = 3;
+	t.tv_usec = 0;
+
+	c_event = event_new( base, c_skt, EV_READ|EV_PERSIST|EV_TIMEOUT, OnHandleEvents2, base );
+	event_add( c_event, &t );
+
+	event_base_dispatch( base );
+
+	event_free( c_event );
+	event_base_free( base );
+}
